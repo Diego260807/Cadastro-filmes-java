@@ -1,70 +1,61 @@
-// Importa as classes necessárias para fazer a requisição HTTP
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Scanner;
-import java.util.ArrayList;
-
+import java.nio.charset.StandardCharsets;
 
 public class ApiFilmes {
 
-    public static void main(String[] args) throws Exception {
-
-        // Cria o Scanner para ler o nome do filme digitado
-        Scanner leitura = new Scanner(System.in);
-
-        // Cria uma lista para guardar os filmes
-        ArrayList<Filme> filmes = new ArrayList<>();
-
-        // Pergunta o nome do filme
-        System.out.println("Digite o nome do filme:");
-        String nomeFilme = leitura.nextLine();
-
+    public static Filme buscarFilme(String nomeFilme) throws Exception {
 
         // Cria o cliente HTTP
         HttpClient client = HttpClient.newHttpClient();
 
+        // Pega a chave da API através da variável de ambiente
         String chaveApi = System.getenv("OMDB_API_KEY");
+
+        // Codifica o nome do filme para poder ser usado na URL
+        // Exemplo: "Homem Aranha" -> "Homem+Aranha"
+        String nomeCodificado = URLEncoder.encode(
+                nomeFilme,
+                StandardCharsets.UTF_8
+        );
+
         // Cria a requisição para a API
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(
                         "https://www.omdbapi.com/?t="
-                                + nomeFilme
-                                +  "&apikey=" + chaveApi
+                                + nomeCodificado
+                                + "&apikey=" + chaveApi
                 ))
                 .build();
 
-
-        // Envia a requisição para a API
+        // Envia a requisição
         HttpResponse<String> response = client.send(
                 request,
                 HttpResponse.BodyHandlers.ofString()
         );
 
-
-        // Mostra o código de status da resposta
+        // Mostra o código de status
         System.out.println("Status: " + response.statusCode());
 
-
-        // Guarda a resposta da API em uma String
+        // Guarda a resposta da API
         String resposta = response.body();
 
-        System.out.println("Resposta da API:");
-        System.out.println(resposta);
-
+        // Verifica se o filme não foi encontrado
+        if (resposta.contains("\"Response\":\"False\"")) {
+            System.out.println("Filme não encontrado.");
+            return null;
+        }
 
         // =========================
         // TÍTULO
         // =========================
 
-        // Procura onde começa o valor de Title
         int inicio = resposta.indexOf("\"Title\":\"") + 9;
-
-        // Procura onde termina o valor do título
         int fim = resposta.indexOf("\"", inicio);
 
-        // Pega somente o nome do filme
         String titulo = resposta.substring(inicio, fim);
 
         System.out.println("Título: " + titulo);
@@ -74,16 +65,11 @@ public class ApiFilmes {
         // ANO
         // =========================
 
-        // Procura onde começa o valor de Year
         int inicioAno = resposta.indexOf("\"Year\":\"") + 8;
-
-        // Procura onde termina o ano
         int fimAno = resposta.indexOf("\"", inicioAno);
 
-        // Pega somente o ano
         String ano = resposta.substring(inicioAno, fimAno);
 
-        // Transforma o ano de String para int
         int anoInt = Integer.parseInt(ano);
 
         System.out.println("Ano: " + anoInt);
@@ -93,22 +79,20 @@ public class ApiFilmes {
         // DURAÇÃO
         // =========================
 
-        // Procura onde começa o valor de Runtime
         int inicioDuracao = resposta.indexOf("\"Runtime\":\"") + 11;
-
-        // Procura onde termina a duração
         int fimDuracao = resposta.indexOf("\"", inicioDuracao);
 
-        // Pega a duração completa
-        // Exemplo: "126 min"
         String duracao = resposta.substring(inicioDuracao, fimDuracao);
 
-        // Remove o " min"
-        // "126 min" vira "126"
+        // Remove " min"
         String duracaoTexto = duracao.replace(" min", "");
 
-        // Transforma de String para int
-        int duracaoInt = Integer.parseInt(duracaoTexto);
+        int duracaoInt = 0;
+
+        // Verifica se a API não possui a duração
+        if (!duracaoTexto.equals("N/A")) {
+            duracaoInt = Integer.parseInt(duracaoTexto);
+        }
 
         System.out.println("Duração: " + duracao);
 
@@ -117,17 +101,17 @@ public class ApiFilmes {
         // NOTA
         // =========================
 
-        // Procura onde começa o valor de imdbRating
         int inicioNota = resposta.indexOf("\"imdbRating\":\"") + 14;
-
-        // Procura onde termina a nota
         int fimNota = resposta.indexOf("\"", inicioNota);
 
-        // Pega somente a nota
         String nota = resposta.substring(inicioNota, fimNota);
 
-        // Transforma de String para double
-        double notaDouble = Double.parseDouble(nota);
+        double notaDouble = 0;
+
+        // Verifica se a API não possui a nota
+        if (!nota.equals("N/A")) {
+            notaDouble = Double.parseDouble(nota);
+        }
 
         System.out.println("Nota: " + notaDouble);
 
@@ -136,7 +120,6 @@ public class ApiFilmes {
         // CRIANDO O FILME
         // =========================
 
-        // Cria um objeto Filme usando os dados da API
         Filme filmeApi = new Filme(
                 titulo,
                 anoInt,
@@ -144,16 +127,7 @@ public class ApiFilmes {
                 notaDouble
         );
 
-
-        // Adiciona o filme dentro do ArrayList
-        filmes.add(filmeApi);
-
-
-        // Mostra o filme criado
-        System.out.println(filmeApi);
-
-
-        // Fecha o Scanner
-        leitura.close();
+        // Devolve o filme para o CadastroFilme
+        return filmeApi;
     }
 }

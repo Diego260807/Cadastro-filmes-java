@@ -3,7 +3,7 @@ import java.util.Scanner;
 
 public class CadastroFilme {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         Scanner leitura = new Scanner(System.in);
 
@@ -21,6 +21,7 @@ public class CadastroFilme {
             System.out.println("5 - Remover filme");
             System.out.println("6 - Editar filme");
             System.out.println("7 - Alterar nota");
+            System.out.println("8 - Buscar filme na API");
             System.out.println("Escolha uma opção:");
 
             while (!leitura.hasNextInt()) {
@@ -58,6 +59,10 @@ public class CadastroFilme {
 
                 case 7:
                     alterarNota(leitura, filmes);
+                    break;
+
+                case 8:
+                    buscarFilmeApi(leitura, filmes);
                     break;
 
                 default:
@@ -357,6 +362,50 @@ public class CadastroFilme {
         } else {
 
             System.out.println("Filme não encontrado!");
+        }
+    }
+
+
+    // BUSCAR FILME NA API
+    public static void buscarFilmeApi(Scanner leitura, ArrayList<Filme> filmes) throws Exception {
+
+        leitura.nextLine();
+
+        System.out.println("Digite o nome do filme:");
+        String nomeFilme = leitura.nextLine();
+
+        Filme filme = ApiFilmes.buscarFilme(nomeFilme);
+
+        if (filme != null) {
+
+            System.out.println("\nFilme encontrado:");
+            System.out.println(filme);
+
+            System.out.println("\nDeseja adicionar ao cadastro? (s/n):");
+            String resposta = leitura.nextLine();
+
+            if (resposta.equalsIgnoreCase("s")) {
+
+                boolean nomeExiste = false;
+
+                // Verifica se o filme já está cadastrado
+                for (Filme f : filmes) {
+                    if (f.getNome().equalsIgnoreCase(filme.getNome())) {
+                        nomeExiste = true;
+                        break;
+                    }
+                }
+
+                if (nomeExiste) {
+                    System.out.println("Esse filme já está cadastrado!");
+                } else {
+                    filmes.add(filme);
+                    System.out.println("Filme adicionado com sucesso!");
+                }
+
+            } else {
+                System.out.println("Filme não adicionado.");
+            }
         }
     }
 }
